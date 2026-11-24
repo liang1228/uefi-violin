@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = ViolinAutoResetDxe
+  FILE_GUID      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8130
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 0.1
+  ENTRY_POINT    = ViolinAutoResetDxeInitialize
+
+[Sources]
+  ViolinAutoResetDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  Platforms/Xiaomi/ViolinPkg/ViolinPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  PcdLib
+  SerialPortLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiRuntimeServicesTableLib
+
+[Guids]
+  gEfiEventReadyToBootGuid
+
+[FixedPcd]
+  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds
+  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds
+
+[Depex]
+  gEfiTimerArchProtocolGuid AND gEfiResetArchProtocolGuid

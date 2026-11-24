@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = ViolinGopDxe
+  FILE_GUID      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8120
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 0.1
+  ENTRY_POINT    = ViolinGopDxeInitialize
+
+[Sources]
+  ViolinGopDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ArmPkg/ArmPkg.dec
+  Platforms/Xiaomi/ViolinPkg/ViolinPkg.dec
+
+[LibraryClasses]
+  ArmLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  IoLib
+  MemoryAllocationLib
+  PcdLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiGraphicsOutputProtocolGuid  ## PRODUCES
+  gEfiDevicePathProtocolGuid      ## PRODUCES
+
+[FixedPcd]
+  gViolinTokenSpaceGuid.PcdViolinQemuTest
+  gViolinTokenSpaceGuid.PcdViolinDpuBase
+  gViolinTokenSpaceGuid.PcdViolinDefaultFbBase
+  gViolinTokenSpaceGuid.PcdViolinDefaultFbWidth
+  gViolinTokenSpaceGuid.PcdViolinDefaultFbHeight
+
+[Depex]
+  TRUE

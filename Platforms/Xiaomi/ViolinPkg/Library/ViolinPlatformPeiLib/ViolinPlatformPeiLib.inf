@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = ViolinPlatformPeiLib
+  FILE_GUID                      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8111
+  MODULE_TYPE                    = SEC
+  VERSION_STRING                 = 0.1
+  LIBRARY_CLASS                  = PlatformPeiLib
+
+[Sources]
+  ViolinPlatformPeiLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ArmPkg/ArmPkg.dec
+  ArmPlatformPkg/ArmPlatformPkg.dec
+  Platforms/Xiaomi/ViolinPkg/ViolinPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  HobLib
+  PcdLib
+
+[FixedPcd]
+  gArmTokenSpaceGuid.PcdFvBaseAddress
+  gArmTokenSpaceGuid.PcdFvSize
+  gO1TokenSpaceGuid.PcdLogBase
+  gViolinTokenSpaceGuid.PcdViolinHandoffBase

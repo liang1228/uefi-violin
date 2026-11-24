@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = ViolinPsciResetLib
+  FILE_GUID      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8150
+  MODULE_TYPE    = BASE
+  VERSION_STRING = 0.1
+  LIBRARY_CLASS  = HwResetSystemLib
+
+[Sources]
+  ViolinPsciResetLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  ArmMonitorLib
+  BaseLib
+  DebugLib
