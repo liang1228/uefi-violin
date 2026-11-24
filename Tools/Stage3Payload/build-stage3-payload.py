@@ -38,7 +38,8 @@ def verify_kernel_macho(path: Path) -> tuple[int, int, int]:
     return len(raw), cpusubtype, filetype
 
 
-def build_unixnu_toml(timeout: int, title: str, args_line: str) -> str:
+def build_unixnu_toml(timeout: int, title: str, args_line: str, initrd_rel: str | None = None) -> str:
+    initrd_line = f'initrd = "{initrd_rel}"\n' if initrd_rel else ""
     return (
         "version = 1\n\n"
         "[boot]\n"
@@ -52,6 +53,7 @@ def build_unixnu_toml(timeout: int, title: str, args_line: str) -> str:
         f"title = \"{title}\"\n"
         "type = \"xnu\"\n"
         "path = \"Payloads/kernel.macho\"\n"
+        f"{initrd_line}"
         f"args = \"{args_line}\"\n\n"
         "[[entry]]\n"
         "id = \"reset\"\n"
@@ -71,6 +73,7 @@ def main() -> None:
     parser.add_argument("--kernel", type=Path, required=True, help="Real arm64e XNU Mach-O kernel")
     parser.add_argument("--adt", type=Path, required=True, help="Compiled Apple Device Tree (.adt)")
     parser.add_argument("--trustcache", type=Path, default=None, help="Optional DarwinBoot TrustCache bundle (.trustcache)")
+    parser.add_argument("--initrd", type=Path, default=None, help="Optional DarwinBoot RAMDisk payload (Payloads/launchd.macho)")
     parser.add_argument("--out", type=Path, required=True, help="Output FAT32 payload disk image")
     parser.add_argument("--args", type=str, required=True, help="XNU kernel command line")
     parser.add_argument("--title", type=str, default="Violin Stage-3 arm64e XNU", help="Boot menu entry title")
@@ -88,11 +91,12 @@ def main() -> None:
     if len(adt_bytes) < 64:
         raise SystemExit(f"ADT too small: {args.adt} ({len(adt_bytes)} B)")
     tc_bytes = args.trustcache.read_bytes() if args.trustcache else b""
+    initrd_bytes = args.initrd.read_bytes() if args.initrd else b""
 
     if args.size_mb > 0:
         size_mb = args.size_mb
     else:
-        needed_mb = math.ceil((ksize + len(adt_bytes) + len(tc_bytes) + 6 * 1024 * 1024) / (4 * 1024 * 1024)) * 4
+        needed_mb = math.ceil((ksize + len(adt_bytes) + len(tc_bytes) + len(initrd_bytes) + 6 * 1024 * 1024) / (4 * 1024 * 1024)) * 4
         size_mb = max(40, needed_mb)
     max_mb = 240 if args.lz4 else 84
     if size_mb > max_mb:
@@ -102,9 +106,10 @@ def main() -> None:
     if args.out.exists():
         args.out.unlink()
 
+    initrd_rel = "Payloads/launchd.macho" if args.initrd else None
     with tempfile.TemporaryDirectory() as tmp:
         toml_path = Path(tmp) / "unixnu.toml"
-        toml_path.write_text(build_unixnu_toml(args.timeout, args.title, args.args), encoding="ascii")
+        toml_path.write_text(build_unixnu_toml(args.timeout, args.title, args.args, initrd_rel), encoding="ascii")
 
         subprocess.run(
             ["mkfs.vfat", "-F", "32", "-n", "VIOLINBOOT", "-C", str(args.out), str(size_mb * 1024)],
@@ -117,12 +122,14 @@ def main() -> None:
         subprocess.run(["mcopy", "-i", str(args.out), str(args.adt), "::/EFI/UniXNU/Payloads/kernel.macho.adt"], check=True)
         if args.trustcache:
             subprocess.run(["mcopy", "-i", str(args.out), str(args.trustcache), "::/EFI/UniXNU/Payloads/kernel.macho.trustcache"], check=True)
+        if args.initrd:
+            subprocess.run(["mcopy", "-i", str(args.out), str(args.initrd), "::/EFI/UniXNU/Payloads/launchd.macho"], check=True)
 
     khash = hashlib.sha256(args.kernel.read_bytes()).hexdigest()[:16]
     ahash = hashlib.sha256(adt_bytes).hexdigest()[:16]
     print(
-        f"Built FAT32 Stage-3/4 payload -> {args.out} ({size_mb} MiB = {args.out.stat().st_size} B) "
-        f"[kernel={ksize} B subtype=0x{subtype:x} type={ftype} sha256={khash}..; adt={len(adt_bytes)} B sha256={ahash}..; tc={len(tc_bytes)} B]"
+        f"Built FAT32 Stage-3/4/5 payload -> {args.out} ({size_mb} MiB = {args.out.stat().st_size} B) "
+        f"[kernel={ksize} B subtype=0x{subtype:x} type={ftype} sha256={khash}..; adt={len(adt_bytes)} B sha256={ahash}..; tc={len(tc_bytes)} B; initrd={len(initrd_bytes)} B]"
     )
     if args.lz4:
         if not shutil.which("lz4"):
