@@ -70,8 +70,10 @@ PlatformPeim (
         );
       PayloadHob = BuildGuidHob (&gViolinPayloadHobGuid, sizeof (*PayloadHob));
       if (PayloadHob != NULL) {
-        PayloadHob->Base = Handoff->PayloadBase;
-        PayloadHob->Size = Handoff->PayloadSize;
+        PayloadHob->Base             = Handoff->PayloadBase;
+        PayloadHob->Size             = Handoff->PayloadSize;
+        PayloadHob->Magic            = Handoff->PayloadMagic;
+        PayloadHob->UncompressedSize = Handoff->PayloadUncompressedSize;
       }
     }
   } else {

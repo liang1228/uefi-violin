@@ -117,6 +117,179 @@ STATIC EFI_BLOCK_IO_PROTOCOL  mBlockIo = {
   PayloadBlockFlush
 };
 
+#define LZ4F_MAGIC              0x184D2204U
+#define MAX_UNCOMPRESSED_DISK   (256ULL * 1024ULL * 1024ULL)
+
+STATIC
+EFI_STATUS
+DecompressLz4Frame (
+  IN  CONST UINT8  *Src,
+  IN  UINTN        SrcSize,
+  OUT UINT8        *Dst,
+  IN  UINTN        DstCap,
+  OUT UINTN        *OutSize
+  )
+{
+  UINTN    SrcPos;
+  UINTN    DstPos;
+  UINT32   Magic;
+  UINT8    Flg;
+  BOOLEAN  HasBlockChecksum;
+  BOOLEAN  HasContentSize;
+  BOOLEAN  HasDictId;
+
+  if ((Src == NULL) || (Dst == NULL) || (OutSize == NULL) || (SrcSize < 11)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CopyMem (&Magic, Src, sizeof (Magic));
+  if (Magic != LZ4F_MAGIC) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Flg = Src[4];
+  if ((Flg & 0xC0U) != 0x40U) {
+    return EFI_UNSUPPORTED;
+  }
+
+  HasBlockChecksum = (Flg & 0x10U) != 0;
+  HasContentSize   = (Flg & 0x08U) != 0;
+  HasDictId        = (Flg & 0x01U) != 0;
+
+  SrcPos = 6; // magic(4) + FLG(1) + BD(1)
+  if (HasContentSize) {
+    SrcPos += 8;
+  }
+
+  if (HasDictId) {
+    SrcPos += 4;
+  }
+
+  SrcPos += 1; // HC(1)
+  if (SrcPos > SrcSize) {
+    return EFI_COMPROMISED_DATA;
+  }
+
+  DstPos = 0;
+  while (TRUE) {
+    UINT32   BlockHdr;
+    UINTN    BlockSize;
+    UINTN    BlockEnd;
+    BOOLEAN  Uncompressed;
+
+    if (SrcPos + 4 > SrcSize) {
+      return EFI_COMPROMISED_DATA;
+    }
+
+    CopyMem (&BlockHdr, Src + SrcPos, sizeof (BlockHdr));
+    SrcPos += 4;
+    if (BlockHdr == 0) {
+      break; // EndMark
+    }
+
+    Uncompressed = (BlockHdr & 0x80000000U) != 0;
+    BlockSize    = (UINTN)(BlockHdr & 0x7FFFFFFFU);
+    if (BlockSize > SrcSize - SrcPos) {
+      return EFI_COMPROMISED_DATA;
+    }
+
+    BlockEnd = SrcPos + BlockSize;
+    if (Uncompressed) {
+      if (BlockSize > DstCap - DstPos) {
+        return EFI_BUFFER_TOO_SMALL;
+      }
+
+      CopyMem (Dst + DstPos, Src + SrcPos, BlockSize);
+      DstPos += BlockSize;
+      SrcPos  = BlockEnd;
+    } else {
+      while (SrcPos < BlockEnd) {
+        UINT8  Token;
+        UINTN  LitLen;
+        UINTN  Offset;
+        UINTN  MatchLen;
+        UINTN  Idx;
+
+        Token  = Src[SrcPos++];
+        LitLen = (UINTN)(Token >> 4);
+        if (LitLen == 15) {
+          UINT8  Extra;
+          do {
+            if (SrcPos >= BlockEnd) {
+              return EFI_COMPROMISED_DATA;
+            }
+
+            Extra   = Src[SrcPos++];
+            LitLen += Extra;
+          } while (Extra == 255);
+        }
+
+        if ((LitLen > BlockEnd - SrcPos) || (LitLen > DstCap - DstPos)) {
+          return EFI_COMPROMISED_DATA;
+        }
+
+        if (LitLen > 0) {
+          CopyMem (Dst + DstPos, Src + SrcPos, LitLen);
+          SrcPos += LitLen;
+          DstPos += LitLen;
+        }
+
+        if (SrcPos == BlockEnd) {
+          break;
+        }
+
+        if (BlockEnd - SrcPos < 2) {
+          return EFI_COMPROMISED_DATA;
+        }
+
+        Offset  = (UINTN)Src[SrcPos] | ((UINTN)Src[SrcPos + 1] << 8);
+        SrcPos += 2;
+        if ((Offset == 0) || (Offset > DstPos)) {
+          return EFI_COMPROMISED_DATA;
+        }
+
+        MatchLen = (UINTN)(Token & 0x0FU) + 4;
+        if ((Token & 0x0FU) == 15) {
+          UINT8  Extra;
+          do {
+            if (SrcPos >= BlockEnd) {
+              return EFI_COMPROMISED_DATA;
+            }
+
+            Extra     = Src[SrcPos++];
+            MatchLen += Extra;
+          } while (Extra == 255);
+        }
+
+        if (MatchLen > DstCap - DstPos) {
+          return EFI_BUFFER_TOO_SMALL;
+        }
+
+        if (Offset >= MatchLen) {
+          CopyMem (Dst + DstPos, Dst + DstPos - Offset, MatchLen);
+          DstPos += MatchLen;
+        } else {
+          for (Idx = 0; Idx < MatchLen; Idx++) {
+            Dst[DstPos] = Dst[DstPos - Offset];
+            DstPos++;
+          }
+        }
+      }
+    }
+
+    if (HasBlockChecksum) {
+      if (SrcSize - SrcPos < 4) {
+        return EFI_COMPROMISED_DATA;
+      }
+
+      SrcPos += 4;
+    }
+  }
+
+  *OutSize = DstPos;
+  return EFI_SUCCESS;
+}
+
 EFI_STATUS
 EFIAPI
 ViolinPayloadDiskDxeInitialize (
@@ -131,7 +304,7 @@ ViolinPayloadDiskDxeInitialize (
 
   Hob = GetFirstGuidHob (&gViolinPayloadHobGuid);
   if ((Hob == NULL) || (GET_GUID_HOB_DATA_SIZE (Hob) < sizeof (VIOLIN_PAYLOAD_HOB))) {
-    DEBUG ((DEBUG_INFO, "[ViolinPayloadDisk] No embedded VNPDISK1 payload HOB\n"));
+    DEBUG ((DEBUG_INFO, "[ViolinPayloadDisk] No embedded VNPDISK1/2 payload HOB\n"));
     return EFI_SUCCESS;
   }
 
@@ -141,8 +314,63 @@ ViolinPayloadDiskDxeInitialize (
     return EFI_SUCCESS;
   }
 
-  mPayloadBase  = (UINT8 *)(UINTN)Info->Base;
-  mPayloadBytes = Info->Size - (Info->Size % PAYLOAD_BLOCK_SIZE);
+  if (Info->Magic == VIOLIN_PAYLOAD_LZ4_MAGIC) {
+    EFI_PHYSICAL_ADDRESS  DecompAddr;
+    UINTN                 OutBytes;
+
+    if ((Info->UncompressedSize < PAYLOAD_BLOCK_SIZE) ||
+        (Info->UncompressedSize > MAX_UNCOMPRESSED_DISK) ||
+        ((Info->UncompressedSize % PAYLOAD_BLOCK_SIZE) != 0))
+    {
+      DEBUG ((DEBUG_ERROR, "[ViolinPayloadDisk] Invalid LZ4 UncompressedSize=0x%lx\n", Info->UncompressedSize));
+      return EFI_INVALID_PARAMETER;
+    }
+
+    DecompAddr = 0;
+    Status     = gBS->AllocatePages (
+                        AllocateAnyPages,
+                        EfiBootServicesData,
+                        EFI_SIZE_TO_PAGES ((UINTN)Info->UncompressedSize),
+                        &DecompAddr
+                        );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "[ViolinPayloadDisk] AllocatePages(0x%lx) failed: %r\n", Info->UncompressedSize, Status));
+      return Status;
+    }
+
+    OutBytes = 0;
+    Status   = DecompressLz4Frame (
+                 (CONST UINT8 *)(UINTN)Info->Base,
+                 (UINTN)Info->Size,
+                 (UINT8 *)(UINTN)DecompAddr,
+                 (UINTN)Info->UncompressedSize,
+                 &OutBytes
+                 );
+    if (EFI_ERROR (Status) || (OutBytes != (UINTN)Info->UncompressedSize)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "[ViolinPayloadDisk] LZ4 decompress failed: %r (out=0x%lx expected=0x%lx)\n",
+        Status,
+        (UINT64)OutBytes,
+        Info->UncompressedSize
+        ));
+      gBS->FreePages (DecompAddr, EFI_SIZE_TO_PAGES ((UINTN)Info->UncompressedSize));
+      return EFI_COMPROMISED_DATA;
+    }
+
+    mPayloadBase  = (UINT8 *)(UINTN)DecompAddr;
+    mPayloadBytes = OutBytes;
+    DEBUG ((
+      DEBUG_INFO,
+      "[ViolinPayloadDisk] LZ4 decompressed 0x%lx -> 0x%lx bytes at 0x%lx\n",
+      Info->Size,
+      mPayloadBytes,
+      (UINT64)(UINTN)mPayloadBase
+      ));
+  } else {
+    mPayloadBase  = (UINT8 *)(UINTN)Info->Base;
+    mPayloadBytes = Info->Size - (Info->Size % PAYLOAD_BLOCK_SIZE);
+  }
 
   mMedia.MediaId          = 1;
   mMedia.RemovableMedia   = FALSE;

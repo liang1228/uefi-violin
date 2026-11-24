@@ -162,7 +162,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000046
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x00
 
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage3"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage4"
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
@@ -196,8 +196,8 @@
 !if $(QEMU_TEST) == 1
   gArmTokenSpaceGuid.PcdSystemMemorySize|0x080000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|TRUE
-  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|12
-  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|25
+  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|20
+  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|40
   gO1TokenSpaceGuid.PcdQemuPl011Base|0x09000000
   gArmTokenSpaceGuid.PcdGicDistributorBase|0x08000000
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0x080A0000

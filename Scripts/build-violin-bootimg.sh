@@ -109,13 +109,26 @@ img = bytearray(shim_padded) + bytearray(fd)
 
 if payload_arg:
     payload = Path(payload_arg).read_bytes()
-    assert len(payload) > 0 and (len(payload) % 512) == 0, f"Payload size must be non-zero 512B multiple: {len(payload)}"
-    trailer = struct.pack("<8sQQQ", b"VNPDISK1", len(payload), 0, 0)
-    img += trailer + payload
+    if payload_arg.endswith(".lz4"):
+        assert len(payload) >= 15 and struct.unpack_from("<I", payload, 0)[0] == 0x184D2204, "Not an LZ4 frame"
+        flg = payload[4]
+        assert (flg & 0x08) != 0, "LZ4 frame must include Content Size (--content-size)"
+        uncomp_size = struct.unpack_from("<Q", payload, 6)[0]
+        assert uncomp_size > 0 and (uncomp_size % 512) == 0, f"Uncompressed size must be 512B multiple: {uncomp_size}"
+        pad = (-len(payload)) % 512
+        stored = payload + (b"\x00" * pad)
+        trailer = struct.pack("<8sQQQ", b"VNPDISK2", len(stored), uncomp_size, 0)
+        img += trailer + stored
+        label = f"VNPDISK2 LZ4 ({len(stored)} B -> {uncomp_size} B)"
+    else:
+        assert len(payload) > 0 and (len(payload) % 512) == 0, f"Payload size must be non-zero 512B multiple: {len(payload)}"
+        trailer = struct.pack("<8sQQQ", b"VNPDISK1", len(payload), 0, 0)
+        img += trailer + payload
+        label = f"VNPDISK1 raw ({len(payload)} B)"
     # Patch ARM64 Image header image_size (+0x10) so bootloader / QEMU never overlaps DTB with payload
     aligned_total = ((len(img) + 0xFFFF) // 0x10000) * 0x10000
     struct.pack_into("<Q", img, 0x10, aligned_total)
-    print(f"Attached VNPDISK1 payload ({len(payload)} B), patched ARM64 image_size=0x{aligned_total:x}")
+    print(f"Attached {label} payload, patched ARM64 image_size=0x{aligned_total:x}")
 
 assert img[0:2] == b"MZ" and img[56:60] == b"ARMd"
 out.write_bytes(bytes(img))

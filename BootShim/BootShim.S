@@ -27,7 +27,8 @@
 
 #define HANDOFF_BASE         0x100480000
 #define HANDOFF_MAGIC        0x56494F484F423031  /* "VIOHOB01" */
-#define PAYLOAD_MAGIC        0x314B534944504E56  /* "VNPDISK1" */
+#define PAYLOAD_MAGIC        0x314B534944504E56  /* "VNPDISK1" (raw FAT) */
+#define PAYLOAD_LZ4_MAGIC    0x324B534944504E56  /* "VNPDISK2" (LZ4-frame FAT) */
 #define PAYLOAD_DEST_BASE    0x100800000
 #define PAYLOAD_MAX_SIZE     0x05400000          /* 84 MiB max embedded FAT disk (fits inside 96 MiB boot_b) */
 #define RAMOOPS_CONSOLE_BASE 0xA0040000
@@ -67,6 +68,8 @@ _start:
     str   x2, [x0, #24]             /* CurrentEL */
     str   xzr, [x0, #32]            /* PayloadBase (filled below if present) */
     str   xzr, [x0, #40]            /* PayloadSize */
+    str   xzr, [x0, #48]            /* PayloadMagic */
+    str   xzr, [x0, #56]            /* PayloadUncompressedSize */
     dc    civac, x0
     dsb   sy
 
@@ -102,15 +105,20 @@ _start:
 .Lcopy_done:
     dsb   sy
 
-    /* 3b. Detect optional "VNPDISK1" payload trailer right after VIOLIN_UEFI.fd */
+    /* 3b. Detect optional "VNPDISK1" (raw) or "VNPDISK2" (LZ4) trailer right after VIOLIN_UEFI.fd */
     adr   x10, _fd_payload
     ldr   x11, =FD_SIZE
     add   x10, x10, x11             /* x10 = trailer header pointer */
     ldr   x12, [x10, #0]
     ldr   x13, =PAYLOAD_MAGIC
     cmp   x12, x13
+    b.eq  .Lpayload_magic_ok
+    ldr   x13, =PAYLOAD_LZ4_MAGIC
+    cmp   x12, x13
     b.ne  .Lpayload_done
-    ldr   x14, [x10, #8]            /* x14 = payload size in bytes */
+.Lpayload_magic_ok:
+    ldr   x14, [x10, #8]            /* x14 = stored payload size in bytes */
+    ldr   x16, [x10, #16]           /* x16 = uncompressed size (0 for VNPDISK1) */
     cbz   x14, .Lpayload_done
     ldr   x15, =PAYLOAD_MAX_SIZE
     cmp   x14, x15
@@ -143,11 +151,13 @@ _start:
 .Lflush_payload_done:
     dsb   sy
 
-    /* Publish PayloadBase & PayloadSize in HANDOFF_BASE */
+    /* Publish PayloadBase, PayloadSize, PayloadMagic, PayloadUncompressedSize in HANDOFF_BASE */
     ldr   x0, =HANDOFF_BASE
     ldr   x1, =PAYLOAD_DEST_BASE
     str   x1, [x0, #32]
     str   x14, [x0, #40]
+    str   x12, [x0, #48]
+    str   x16, [x0, #56]
     dc    civac, x0
     dsb   sy
 .Lpayload_done:
