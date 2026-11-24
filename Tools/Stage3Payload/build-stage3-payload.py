@@ -73,7 +73,8 @@ def main() -> None:
     parser.add_argument("--kernel", type=Path, required=True, help="Real arm64e XNU Mach-O kernel")
     parser.add_argument("--adt", type=Path, required=True, help="Compiled Apple Device Tree (.adt)")
     parser.add_argument("--trustcache", type=Path, default=None, help="Optional DarwinBoot TrustCache bundle (.trustcache)")
-    parser.add_argument("--initrd", type=Path, default=None, help="Optional DarwinBoot RAMDisk payload (Payloads/launchd.macho)")
+    parser.add_argument("--initrd", type=Path, default=None, help="Optional DarwinBoot RAMDisk/PackedRAMDisk payload")
+    parser.add_argument("--initrd-name", type=str, default="launchd.macho", help="Filename under Payloads/ for --initrd (default: launchd.macho)")
     parser.add_argument("--out", type=Path, required=True, help="Output FAT32 payload disk image")
     parser.add_argument("--args", type=str, required=True, help="XNU kernel command line")
     parser.add_argument("--title", type=str, default="Violin Stage-3 arm64e XNU", help="Boot menu entry title")
@@ -106,7 +107,7 @@ def main() -> None:
     if args.out.exists():
         args.out.unlink()
 
-    initrd_rel = "Payloads/launchd.macho" if args.initrd else None
+    initrd_rel = f"Payloads/{args.initrd_name}" if args.initrd else None
     with tempfile.TemporaryDirectory() as tmp:
         toml_path = Path(tmp) / "unixnu.toml"
         toml_path.write_text(build_unixnu_toml(args.timeout, args.title, args.args, initrd_rel), encoding="ascii")
@@ -123,7 +124,7 @@ def main() -> None:
         if args.trustcache:
             subprocess.run(["mcopy", "-i", str(args.out), str(args.trustcache), "::/EFI/UniXNU/Payloads/kernel.macho.trustcache"], check=True)
         if args.initrd:
-            subprocess.run(["mcopy", "-i", str(args.out), str(args.initrd), "::/EFI/UniXNU/Payloads/launchd.macho"], check=True)
+            subprocess.run(["mcopy", "-i", str(args.out), str(args.initrd), f"::/EFI/UniXNU/Payloads/{args.initrd_name}"], check=True)
 
     khash = hashlib.sha256(args.kernel.read_bytes()).hexdigest()[:16]
     ahash = hashlib.sha256(adt_bytes).hexdigest()[:16]
