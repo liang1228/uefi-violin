@@ -24,6 +24,7 @@ PlatformPeim (
 {
   CONST VIOLIN_BOOTSHIM_HANDOFF  *Handoff;
   UINT64                         *EntryArgHob;
+  VIOLIN_PAYLOAD_HOB             *PayloadHob;
 
   BuildFvHob (PcdGet64 (PcdFvBaseAddress), PcdGet32 (PcdFvSize));
 
@@ -46,15 +47,31 @@ PlatformPeim (
   if ((Handoff != NULL) && (Handoff->Magic == VIOLIN_HANDOFF_MAGIC)) {
     DEBUG ((
       DEBUG_INFO,
-      "[ViolinPei] BootShim handoff: FdtBase=0x%lx LoadPc=0x%lx CurrentEL=0x%lx\n",
+      "[ViolinPei] BootShim handoff: FdtBase=0x%lx LoadPc=0x%lx CurrentEL=0x%lx Payload=0x%lx+0x%lx\n",
       Handoff->FdtBase,
       Handoff->LoadPc,
-      Handoff->CurrentEl
+      Handoff->CurrentEl,
+      Handoff->PayloadBase,
+      Handoff->PayloadSize
       ));
     if (Handoff->FdtBase != 0) {
       EntryArgHob = BuildGuidHob (&mUniXnuEntryArgHobGuid, sizeof (*EntryArgHob));
       if (EntryArgHob != NULL) {
         *EntryArgHob = Handoff->FdtBase;
+      }
+    }
+
+    if ((Handoff->PayloadBase != 0) && (Handoff->PayloadSize != 0)) {
+      UINT64  AlignedSize = ALIGN_VALUE (Handoff->PayloadSize, EFI_PAGE_SIZE);
+      BuildMemoryAllocationHob (
+        Handoff->PayloadBase,
+        AlignedSize,
+        EfiBootServicesData
+        );
+      PayloadHob = BuildGuidHob (&gViolinPayloadHobGuid, sizeof (*PayloadHob));
+      if (PayloadHob != NULL) {
+        PayloadHob->Base = Handoff->PayloadBase;
+        PayloadHob->Size = Handoff->PayloadSize;
       }
     }
   } else {

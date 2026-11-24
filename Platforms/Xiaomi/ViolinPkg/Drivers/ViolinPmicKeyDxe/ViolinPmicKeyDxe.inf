@@ -1,0 +1,51 @@
+## @file
+#  PMIC physical key (Vol+/Vol-/Power via XRING O1 SPMI Ch1) and QEMU PL011 RX
+#  SimpleTextIn / SimpleTextInEx driver for violin.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = ViolinPmicKeyDxe
+  FILE_GUID                      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8131
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = ViolinPmicKeyDxeInitialize
+
+[Sources]
+  ViolinPmicKeyDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  Platforms/Xiaomi/ViolinPkg/ViolinPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  IoLib
+  MemoryAllocationLib
+  PcdLib
+  TimerLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiDevicePathProtocolGuid
+  gEfiSimpleTextInProtocolGuid
+  gEfiSimpleTextInputExProtocolGuid
+
+[Guids]
+  gEfiConsoleInDeviceGuid
+  gEfiEventExitBootServicesGuid
+
+[FixedPcd]
+  gViolinTokenSpaceGuid.PcdViolinQemuTest
+  gViolinTokenSpaceGuid.PcdViolinSpmiBase
+  gViolinTokenSpaceGuid.PcdViolinSpmiChannel
+  gO1TokenSpaceGuid.PcdQemuPl011Base
+
+[Depex]
+  TRUE

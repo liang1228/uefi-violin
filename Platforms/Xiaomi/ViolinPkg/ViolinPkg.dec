@@ -16,6 +16,7 @@
 [Guids]
   gO1TokenSpaceGuid              = { 0x6F4A92C1, 0x3D8B, 0x4E12, { 0x9A, 0x77, 0x44, 0x11, 0x8F, 0x20, 0x01, 0x01 } }
   gViolinTokenSpaceGuid          = { 0x9C7D4B12, 0x4F5A, 0x4E8B, { 0x8C, 0x21, 0x3D, 0x9E, 0x6F, 0x7A, 0x81, 0x02 } }
+  gViolinPayloadHobGuid          = { 0x9C7D4B12, 0x4F5A, 0x4E8B, { 0x8C, 0x21, 0x3D, 0x9E, 0x6F, 0x7A, 0x81, 0x40 } }
 
 [PcdsFixedAtBuild]
   gO1TokenSpaceGuid.PcdLogBase|0x100400000|UINT64|0x00000001
@@ -36,3 +37,5 @@
   gViolinTokenSpaceGuid.PcdViolinDefaultFbBase|0x29BFF000|UINT64|0x00000015
   gViolinTokenSpaceGuid.PcdViolinDefaultFbWidth|3200|UINT32|0x00000016
   gViolinTokenSpaceGuid.PcdViolinDefaultFbHeight|2136|UINT32|0x00000017
+  gViolinTokenSpaceGuid.PcdViolinSpmiBase|0xE0001000|UINT64|0x00000018
+  gViolinTokenSpaceGuid.PcdViolinSpmiChannel|1|UINT32|0x00000019

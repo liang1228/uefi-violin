@@ -27,6 +27,9 @@
 
 #define HANDOFF_BASE         0x100480000
 #define HANDOFF_MAGIC        0x56494F484F423031  /* "VIOHOB01" */
+#define PAYLOAD_MAGIC        0x314B534944504E56  /* "VNPDISK1" */
+#define PAYLOAD_DEST_BASE    0x100800000
+#define PAYLOAD_MAX_SIZE     0x04000000          /* 64 MiB max embedded FAT disk */
 #define RAMOOPS_CONSOLE_BASE 0xA0040000
 #define RAMOOPS_PMSG_BASE    0xA00C0000
 #define PERSISTENT_RAM_SIG   0x43474244          /* "DBGC" */
@@ -62,7 +65,8 @@ _start:
     str   x21, [x0, #16]            /* LoadPc */
     mrs   x2, CurrentEL
     str   x2, [x0, #24]             /* CurrentEL */
-    str   xzr, [x0, #32]
+    str   xzr, [x0, #32]            /* PayloadBase (filled below if present) */
+    str   xzr, [x0, #40]            /* PayloadSize */
     dc    civac, x0
     dsb   sy
 
@@ -97,6 +101,56 @@ _start:
     b     .Lcopy_loop
 .Lcopy_done:
     dsb   sy
+
+    /* 3b. Detect optional "VNPDISK1" payload trailer right after VIOLIN_UEFI.fd */
+    adr   x10, _fd_payload
+    ldr   x11, =FD_SIZE
+    add   x10, x10, x11             /* x10 = trailer header pointer */
+    ldr   x12, [x10, #0]
+    ldr   x13, =PAYLOAD_MAGIC
+    cmp   x12, x13
+    b.ne  .Lpayload_done
+    ldr   x14, [x10, #8]            /* x14 = payload size in bytes */
+    cbz   x14, .Lpayload_done
+    ldr   x15, =PAYLOAD_MAX_SIZE
+    cmp   x14, x15
+    b.hi  .Lpayload_done
+
+    add   x1, x10, #32              /* src = trailer + 32 */
+    ldr   x2, =PAYLOAD_DEST_BASE    /* dst = 0x100800000 */
+    mov   x4, #0
+.Lpayload_copy:
+    cmp   x4, x14
+    b.hs  .Lpayload_copied
+    ldr   x5, [x1, x4]
+    str   x5, [x2, x4]
+    add   x4, x4, #8
+    b     .Lpayload_copy
+.Lpayload_copied:
+    dsb   sy
+
+    /* Clean D-cache across relocated payload disk */
+    ldr   x0, =PAYLOAD_DEST_BASE
+    add   x1, x0, x14
+    add   x1, x1, #63
+    bic   x1, x1, #63
+.Lflush_payload:
+    cmp   x0, x1
+    b.hs  .Lflush_payload_done
+    dc    cvau, x0
+    add   x0, x0, #64
+    b     .Lflush_payload
+.Lflush_payload_done:
+    dsb   sy
+
+    /* Publish PayloadBase & PayloadSize in HANDOFF_BASE */
+    ldr   x0, =HANDOFF_BASE
+    ldr   x1, =PAYLOAD_DEST_BASE
+    str   x1, [x0, #32]
+    str   x14, [x0, #40]
+    dc    civac, x0
+    dsb   sy
+.Lpayload_done:
 
     /* Clean D-cache across relocated FD and invalidate I-cache */
     ldr   x0, =FD_BASE

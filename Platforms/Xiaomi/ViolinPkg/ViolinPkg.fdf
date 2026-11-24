@@ -68,9 +68,10 @@ FvNameGuid         = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A81FF
   INF EmbeddedPkg/MetronomeDxe/MetronomeDxe.inf
   INF EmbeddedPkg/RealTimeClockRuntimeDxe/RealTimeClockRuntimeDxe.inf
 
-  # Console, GOP, AutoReset
+  # Console, GOP, Physical Key Input, AutoReset
   INF Platforms/Xiaomi/ViolinPkg/Drivers/O1SerialDxe/O1SerialDxe.inf
   INF Platforms/Xiaomi/ViolinPkg/Drivers/ViolinGopDxe/ViolinGopDxe.inf
+  INF Platforms/Xiaomi/ViolinPkg/Drivers/ViolinPmicKeyDxe/ViolinPmicKeyDxe.inf
   INF Platforms/Xiaomi/ViolinPkg/Drivers/ViolinAutoResetDxe/ViolinAutoResetDxe.inf
   INF MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
   INF MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
@@ -80,6 +81,7 @@ FvNameGuid         = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A81FF
   INF MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
   INF FatPkg/EnhancedFatDxe/Fat.inf
+  INF Platforms/Xiaomi/ViolinPkg/Drivers/ViolinPayloadDiskDxe/ViolinPayloadDiskDxe.inf
   INF UniXNUPkg/Driver/UniXNURamDiskDxe/UniXNURamDiskDxe.inf
   INF UniXNUPkg/Driver/UniXNUDxe/UniXNUDxe.inf
   INF UniXNUPkg/Application/UniXNU/UniXNU.inf

@@ -15,6 +15,7 @@
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/SerialIo.h>
+#include <Protocol/SimpleTextIn.h>
 
 STATIC
 VOID
@@ -40,6 +41,19 @@ AddConsoleVariables (
     }
     FreePool (Handles);
   }
+
+  // Register physical SimpleTextIn handles (those carrying a DevicePath) as ConIn
+  // so ConSplitterDxe binds ViolinPmicKeyDxe into gST->ConIn and UniXNU sees input=yes.
+  Status = gBS->LocateHandleBuffer (ByProtocol, &gEfiSimpleTextInProtocolGuid, NULL, &Count, &Handles);
+  if (!EFI_ERROR (Status)) {
+    for (Idx = 0; Idx < Count; Idx++) {
+      Dp = DevicePathFromHandle (Handles[Idx]);
+      if (Dp != NULL) {
+        EfiBootManagerUpdateConsoleVariable (ConIn, Dp, NULL);
+      }
+    }
+    FreePool (Handles);
+  }
 }
 
 VOID
@@ -58,7 +72,8 @@ PlatformBootManagerAfterConsole (
   VOID
   )
 {
-  DEBUG ((DEBUG_INFO, "[ViolinBds] AfterConsole: connecting all controllers\n"));
+  DEBUG ((DEBUG_INFO, "[ViolinBds] AfterConsole: connecting consoles and controllers\n"));
+  EfiBootManagerConnectAllDefaultConsoles ();
   EfiBootManagerConnectAll ();
   EfiBootManagerRefreshAllBootOption ();
 }

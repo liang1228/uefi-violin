@@ -1,0 +1,39 @@
+## @file
+#  Read-only BlockIo driver exposing the BootShim-relocated FAT payload disk
+#  (VNPDISK1 trailer appended inside boot_b) to PartitionDxe / EnhancedFatDxe.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = ViolinPayloadDiskDxe
+  FILE_GUID                      = 9C7D4B12-4F5A-4E8B-8C21-3D9E6F7A8142
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = ViolinPayloadDiskDxeInitialize
+
+[Sources]
+  ViolinPayloadDiskDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  Platforms/Xiaomi/ViolinPkg/ViolinPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  HobLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiBlockIoProtocolGuid
+  gEfiDevicePathProtocolGuid
+
+[Guids]
+  gViolinPayloadHobGuid
+
+[Depex]
+  TRUE

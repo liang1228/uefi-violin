@@ -162,7 +162,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000046
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x00
 
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage1"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage2"
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
@@ -196,16 +196,16 @@
 
 !if $(QEMU_TEST) == 1
   gViolinTokenSpaceGuid.PcdViolinQemuTest|TRUE
-  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|2
-  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|8
+  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|12
+  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|25
   gO1TokenSpaceGuid.PcdQemuPl011Base|0x09000000
   gArmTokenSpaceGuid.PcdGicDistributorBase|0x08000000
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0x080A0000
   gArmTokenSpaceGuid.PcdMonitorConduitHvc|TRUE
 !else
   gViolinTokenSpaceGuid.PcdViolinQemuTest|FALSE
-  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|5
-  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|18
+  gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|15
+  gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|30
   gO1TokenSpaceGuid.PcdQemuPl011Base|0x0
   gArmTokenSpaceGuid.PcdGicDistributorBase|0xEBC00000
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0xEBC80000
@@ -213,6 +213,7 @@
 !endif
 
 [PcdsDynamicDefault.common]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdConInConnectOnDemand|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution|3200
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution|2136
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoHorizontalResolution|3200
@@ -252,9 +253,10 @@
   EmbeddedPkg/MetronomeDxe/MetronomeDxe.inf
   EmbeddedPkg/RealTimeClockRuntimeDxe/RealTimeClockRuntimeDxe.inf
 
-  # Console & Graphics
+  # Console, Graphics & Physical Key Input
   Platforms/Xiaomi/ViolinPkg/Drivers/O1SerialDxe/O1SerialDxe.inf
   Platforms/Xiaomi/ViolinPkg/Drivers/ViolinGopDxe/ViolinGopDxe.inf
+  Platforms/Xiaomi/ViolinPkg/Drivers/ViolinPmicKeyDxe/ViolinPmicKeyDxe.inf
   Platforms/Xiaomi/ViolinPkg/Drivers/ViolinAutoResetDxe/ViolinAutoResetDxe.inf
   MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
   MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
@@ -264,6 +266,7 @@
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
   FatPkg/EnhancedFatDxe/Fat.inf
+  Platforms/Xiaomi/ViolinPkg/Drivers/ViolinPayloadDiskDxe/ViolinPayloadDiskDxe.inf
   UniXNUPkg/Driver/UniXNURamDiskDxe/UniXNURamDiskDxe.inf
   UniXNUPkg/Driver/UniXNUDxe/UniXNUDxe.inf
   UniXNUPkg/Application/UniXNU/UniXNU.inf

@@ -23,6 +23,9 @@
   HobLib
   PcdLib
 
+[Guids]
+  gViolinPayloadHobGuid
+
 [FixedPcd]
   gArmTokenSpaceGuid.PcdFvBaseAddress
   gArmTokenSpaceGuid.PcdFvSize

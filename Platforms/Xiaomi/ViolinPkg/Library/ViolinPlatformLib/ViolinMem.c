@@ -82,6 +82,13 @@ ArmPlatformGetVirtualMemoryMap (
     Map[Index].Length       = 0x00400000ULL;
     Map[Index].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
     Index++;
+
+    // 7. SPMI Controller (0xE0001000 inside 0xE0000000 + 1 MiB, Stage-2A verified EL1 Ch1)
+    Map[Index].PhysicalBase = 0xE0000000ULL;
+    Map[Index].VirtualBase  = 0xE0000000ULL;
+    Map[Index].Length       = 0x00100000ULL;
+    Map[Index].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
+    Index++;
   }
 
   // Terminator
