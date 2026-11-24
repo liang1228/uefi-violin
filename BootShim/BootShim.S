@@ -29,7 +29,7 @@
 #define HANDOFF_MAGIC        0x56494F484F423031  /* "VIOHOB01" */
 #define PAYLOAD_MAGIC        0x314B534944504E56  /* "VNPDISK1" */
 #define PAYLOAD_DEST_BASE    0x100800000
-#define PAYLOAD_MAX_SIZE     0x04000000          /* 64 MiB max embedded FAT disk */
+#define PAYLOAD_MAX_SIZE     0x05400000          /* 84 MiB max embedded FAT disk (fits inside 96 MiB boot_b) */
 #define RAMOOPS_CONSOLE_BASE 0xA0040000
 #define RAMOOPS_PMSG_BASE    0xA00C0000
 #define PERSISTENT_RAM_SIG   0x43474244          /* "DBGC" */
@@ -116,15 +116,15 @@ _start:
     cmp   x14, x15
     b.hi  .Lpayload_done
 
-    add   x1, x10, #32              /* src = trailer + 32 */
+    add   x1, x10, #32              /* src = trailer + 32 (32-byte aligned) */
     ldr   x2, =PAYLOAD_DEST_BASE    /* dst = 0x100800000 */
     mov   x4, #0
 .Lpayload_copy:
     cmp   x4, x14
     b.hs  .Lpayload_copied
-    ldr   x5, [x1, x4]
-    str   x5, [x2, x4]
-    add   x4, x4, #8
+    ldp   x5, x6, [x1], #16
+    stp   x5, x6, [x2], #16
+    add   x4, x4, #16
     b     .Lpayload_copy
 .Lpayload_copied:
     dsb   sy

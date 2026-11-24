@@ -162,7 +162,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000046
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x00
 
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage2"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"ViolinUEFI-Stage3"
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
@@ -170,9 +170,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize|0x2800
 
-  # Bank 1 clean contiguous DRAM (0x100000000 + 2 GiB)
+  # Bank 1 clean contiguous DRAM base (size set per target below: 2 GiB QEMU / 4 GiB violin)
   gArmTokenSpaceGuid.PcdSystemMemoryBase|0x100000000
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x080000000
   gArmPlatformTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x04000000
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x40000
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|0
@@ -195,6 +194,7 @@
   gO1TokenSpaceGuid.PcdPersistentPmsgSize|0x00040000
 
 !if $(QEMU_TEST) == 1
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x080000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|TRUE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|12
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|25
@@ -203,6 +203,7 @@
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0x080A0000
   gArmTokenSpaceGuid.PcdMonitorConduitHvc|TRUE
 !else
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x100000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|FALSE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|15
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|30
