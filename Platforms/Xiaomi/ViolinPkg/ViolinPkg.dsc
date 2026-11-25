@@ -170,7 +170,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize|0x2800
 
-  # Bank 1 clean contiguous DRAM base (size set per target below: 2 GiB QEMU / 4 GiB violin)
+  # Bank 1 clean contiguous DRAM base (size set per target below: 4 GiB QEMU / 6 GiB violin)
   gArmTokenSpaceGuid.PcdSystemMemoryBase|0x100000000
   gArmPlatformTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x04000000
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x40000
@@ -194,7 +194,7 @@
   gO1TokenSpaceGuid.PcdPersistentPmsgSize|0x00040000
 
 !if $(QEMU_TEST) == 1
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x080000000
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x100000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|TRUE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|20
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|40
@@ -203,7 +203,7 @@
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0x080A0000
   gArmTokenSpaceGuid.PcdMonitorConduitHvc|TRUE
 !else
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x100000000
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x180000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|FALSE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|15
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|30
