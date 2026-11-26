@@ -25,7 +25,7 @@ ArmPlatformGetVirtualMemoryMap (
   ASSERT (Map != NULL);
   Index = 0;
 
-  // 1. Primary UEFI System Memory (Bank 1: 0x100000000 + PcdSystemMemorySize; 4 GiB QEMU / 6 GiB live violin)
+  // 1. Primary UEFI System Memory (Bank 1: 0x100000000 + PcdSystemMemorySize; 4/10 GiB QEMU / 10 GiB live violin)
   Map[Index].PhysicalBase = PcdGet64 (PcdSystemMemoryBase);
   Map[Index].VirtualBase  = PcdGet64 (PcdSystemMemoryBase);
   Map[Index].Length       = PcdGet64 (PcdSystemMemorySize);

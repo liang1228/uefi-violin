@@ -5,6 +5,7 @@ set -euo pipefail
 # Usage: bash Scripts/build-violin-bootimg.sh [--qemu] [--with-stage2-payload] [--payload-disk path] [--timeout N] [--out /path/to/out.img] [--out-kernel /path/to/kernel.bin]
 
 QEMU_TEST=0
+QEMU_MEM_10G=0
 WITH_STAGE2_PAYLOAD=0
 SKIP_UEFI_BUILD=0
 PAYLOAD_DISK=""
@@ -15,6 +16,7 @@ OUT_KERNEL=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --qemu) QEMU_TEST=1; shift ;;
+    --qemu-mem-10g) QEMU_MEM_10G=1; shift ;;
     --with-stage2-payload) WITH_STAGE2_PAYLOAD=1; shift ;;
     --skip-uefi-build) SKIP_UEFI_BUILD=1; shift ;;
     --payload-disk) PAYLOAD_DISK="$2"; shift 2 ;;
@@ -30,7 +32,7 @@ UNIXNU_ROOT="$(cd "$UEFI_ROOT/../UniXNU" && pwd)"
 EDK2_ROOT="${UNIXNU_EDK2:-/opt/unixnu-edk2/Mu_Basecore}"
 STAGE0_MKBOOT="$(cd "$UEFI_ROOT/../../outputs/stage0-probe-20261124" && pwd)/mkbootv4.py"
 
-BUILD_WORK="/tmp/violin-uefi-build-q${QEMU_TEST}"
+BUILD_WORK="/tmp/violin-uefi-build-q${QEMU_TEST}-m${QEMU_MEM_10G}"
 CONF_DIR="${BUILD_WORK}/Conf"
 mkdir -p "$CONF_DIR"
 for f in target tools_def build_rule; do
@@ -57,7 +59,8 @@ if [[ "$SKIP_UEFI_BUILD" -eq 0 ]]; then
     -D FD_BASE=0x100000000 \
     -D FD_SIZE=0x00400000 \
     -D FD_BLOCKS=0x400 \
-    -D QEMU_TEST="${QEMU_TEST}"
+    -D QEMU_TEST="${QEMU_TEST}" \
+    -D QEMU_MEM_10G="${QEMU_MEM_10G}"
 fi
 
 FD_FILE="${BUILD_WORK}/Build/ViolinPkg/DEBUG_CLANGPDB/FV/VIOLIN_UEFI.fd"

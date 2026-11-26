@@ -19,6 +19,7 @@
   DEFINE FD_SIZE                 = 0x00400000
   DEFINE FD_BLOCKS               = 0x400
   DEFINE QEMU_TEST               = 0
+  DEFINE QEMU_MEM_10G            = 0
 
 !include MdePkg/MdeLibs.dsc.inc
 
@@ -170,7 +171,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize|0x2800
 
-  # Bank 1 clean contiguous DRAM base (size set per target below: 4 GiB QEMU / 6 GiB violin)
+  # Bank 1 clean contiguous DRAM base (size set per target below: 4/10 GiB QEMU / 10 GiB live violin)
   gArmTokenSpaceGuid.PcdSystemMemoryBase|0x100000000
   gArmPlatformTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x04000000
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x40000
@@ -194,7 +195,11 @@
   gO1TokenSpaceGuid.PcdPersistentPmsgSize|0x00040000
 
 !if $(QEMU_TEST) == 1
+!if $(QEMU_MEM_10G) == 1
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x280000000
+!else
   gArmTokenSpaceGuid.PcdSystemMemorySize|0x100000000
+!endif
   gViolinTokenSpaceGuid.PcdViolinQemuTest|TRUE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|20
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|40
@@ -203,7 +208,9 @@
   gArmTokenSpaceGuid.PcdGicRedistributorsBase|0x080A0000
   gArmTokenSpaceGuid.PcdMonitorConduitHvc|TRUE
 !else
-  gArmTokenSpaceGuid.PcdSystemMemorySize|0x180000000
+  # Stage-8B: 10 GiB Bank 1 window (0x100000000..0x380000000), strictly within Stage-7I
+  # live-verified 12 GiB - 16 MiB zero-hole range (0x100000000..0x3FEFFF000).
+  gArmTokenSpaceGuid.PcdSystemMemorySize|0x280000000
   gViolinTokenSpaceGuid.PcdViolinQemuTest|FALSE
   gViolinTokenSpaceGuid.PcdViolinAutoResetSeconds|15
   gViolinTokenSpaceGuid.PcdViolinFallbackResetSeconds|30
